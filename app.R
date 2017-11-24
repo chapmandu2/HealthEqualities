@@ -19,17 +19,19 @@ ui <- navbarPage(title="Health Inequalities In Work",
                  
                  # Application title
                  tabPanel("Sector View",
-                          helpText("Compare sectors and regions"),
+                          helpText("How effective are different sectors and regions at tackling health inequalities?"),
                           
                           # 
                           sidebarLayout(
                             sidebarPanel(
-                              checkboxGroupInput(inputId="Region",
+                              checkboxGroupInput(inputId="RegionV1",
                                                  label="Region:",
-                                                 choices=unique(data$Region)),
-                              checkboxGroupInput(inputId="Sector",
+                                                 choices=unique(data$Region),
+                                                 selected=unique(data$Region)),
+                              checkboxGroupInput(inputId="SectorV1",
                                                  label="Sector:",
-                                                 choices=unique(data$Sector))
+                                                 choices=unique(data$Sector),
+                                                 selected=unique(data$Sector))
                               
                             ),
                             
@@ -43,15 +45,18 @@ ui <- navbarPage(title="Health Inequalities In Work",
                           helpText("Which sectors have are better for someone with my health condition?"),
                           sidebarLayout(
                             sidebarPanel(
-                              checkboxGroupInput(inputId="Region",
+                              checkboxGroupInput(inputId="RegionV2",
                                                  label="Region:",
-                                                 choices=unique(data$Region)),
-                              checkboxGroupInput(inputId="Sector",
+                                                 choices=unique(data$Region),
+                                                 selected=unique(data$Region)[1]),
+                              selectInput(inputId="HealthConditionV2",
                                                  label="Sector:",
-                                                 choices=unique(data$Sector)),
+                                                 choices=unique(data$HealthCondition),
+                                                 selected=unique(data$HealthCondition)[1]),
                               selectInput(inputId="Year",
                                                  label="Year:",
-                                                 choices=unique(data$Year))
+                                                 choices=unique(data$Year),
+                                                  selected="2017")
                               
                             ),
                           mainPanel(
@@ -63,17 +68,33 @@ ui <- navbarPage(title="Health Inequalities In Work",
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-   
+  
+  dat_filtered1 <- reactive({
+    
+    data %>% 
+      dplyr::filter(Region %in% input$RegionV1, Sector %in% input$SectorV1) 
+    
+  })
+
+  
+  dat_filtered2 <- reactive({
+    
+    data %>% 
+      dplyr::filter(Region %in% input$RegionV2, HealthCondition %in% input$HealthConditionV2, Year == input$Year) 
+    
+    
+  })
+  
    output$byTime <- renderPlot({
-    ggplot(data, aes(x=Year, y=Pct_InWork, colour=HealthCondition)) +
+    ggplot(dat_filtered1(), aes(x=Year, y=Pct_InWork, colour=HealthCondition)) +
        geom_point() + geom_line() + ylab("% in work") +
        facet_wrap(~Sector+Region) + theme_bw()
    })
    
    output$bySector <- renderPlot({
-     ggplot(data, aes(x=Sector, y=Pct_InWork, colour=HealthCondition, fill=HealthCondition)) +
+     ggplot(dat_filtered2(), aes(x=Sector, y=Pct_InWork, colour=Sector, fill=Sector)) +
        geom_bar(stat = 'identity') + ylab("% in work") +
-       facet_grid(Year~Region+HealthCondition) + theme_bw()
+       facet_grid(Year+Region~HealthCondition) + theme_bw()
    })
 }
 
