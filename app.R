@@ -6,38 +6,18 @@ library(tidyverse)
 library(readxl)
 
 
-#input_data <- read_excel('data/exampledata.xlsx')
-input_data <- read_tsv('data/simulated_data.tsv')
-
-data <- input_data %>%
-  dplyr::mutate(Pct_InWork=rnorm(nrow(input_data), Pct_InWork, 1))
-
 # Define UI for application that draws a histogram
 ui <- navbarPage(title="Health Inequalities In Work",
                  
                  # Application title
                  tabPanel("Sector View",
                           helpText("How effective are different sectors and regions at tackling health inequalities?"),
-                          
-                          # 
+                          selectInput(inputId="inputData",
+                                      label="Select input data:",
+                                      choices=c("Example Data"=1, "Simulated Data"=2),
+                                      selected=1),
                           sidebarLayout(
-                            sidebarPanel(
-#                              selectInput(inputId="inputData",
-#                                          label="Select input data:",
-#                                          choices=c("Example Data"=1, "Simulated Data"=2),
-#                                          selected=1),
-                              checkboxGroupInput(inputId="RegionV1",
-                                                 label="Region:",
-                                                 choices=unique(data$Region),
-                                                 selected=unique(data$Region)[1]),
-                              checkboxGroupInput(inputId="SectorV1",
-                                                 label="Sector:",
-                                                 choices=unique(data$Sector),
-                                                 selected=unique(data$Sector))
-                              
-                            ),
-                            
-                            # Show a plot of the generated distribution
+                            uiOutput("ui1"),
                             mainPanel(
                               plotOutput("byTime")
                             )
@@ -46,21 +26,7 @@ ui <- navbarPage(title="Health Inequalities In Work",
                  tabPanel("Individual View", 
                           helpText("Which sectors have are better for someone with my health condition?"),
                           sidebarLayout(
-                            sidebarPanel(
-                              checkboxGroupInput(inputId="RegionV2",
-                                                 label="Region:",
-                                                 choices=unique(data$Region),
-                                                 selected=unique(data$Region)[1]),
-                              selectInput(inputId="HealthConditionV2",
-                                                 label="Sector:",
-                                                 choices=unique(data$HealthCondition),
-                                                 selected=unique(data$HealthCondition)[1]),
-                              selectInput(inputId="Year",
-                                                 label="Year:",
-                                                 choices=unique(data$Year),
-                                                  selected="2017")
-                              
-                            ),
+                              uiOutput("ui2"),
                           mainPanel(
                             plotOutput("bySector")
                           )
@@ -71,22 +37,61 @@ ui <- navbarPage(title="Health Inequalities In Work",
 # Define server logic required to draw a histogram
 server <- function(input, output) {
   
-  dat_filtered1 <- reactive({
+  data <- reactive({
+    if (input$inputData == 1) {
+      read_excel('data/exampledata.xlsx') %>%
+        dplyr::mutate(Pct_InWork=rnorm(nrow(.), Pct_InWork, 1))
+    } else {
+      read_tsv('data/simulated_data.tsv')  
+    }
     
-    data %>% 
-      dplyr::filter(Region %in% input$RegionV1, Sector %in% input$SectorV1) 
+  })
+  
+  output$ui1 <- renderUI({
+    sidebarPanel(
+      checkboxGroupInput(inputId="RegionV1",
+                         label="Region:",
+                         choices=unique(data()$Region),
+                         selected=unique(data()$Region)[1]),
+      checkboxGroupInput(inputId="SectorV1",
+                         label="Sector:",
+                         choices=unique(data()$Sector),
+                         selected=unique(data()$Sector))
+      
+    )
+    
     
   })
 
-  
-  dat_filtered2 <- reactive({
-    
-    data %>% 
-      dplyr::filter(Region %in% input$RegionV2, HealthCondition %in% input$HealthConditionV2, Year == input$Year) 
-    
-    
+  output$ui2 <- renderUI({
+    sidebarPanel(
+    checkboxGroupInput(inputId="RegionV2",
+                       label="Region:",
+                       choices=unique(data()$Region),
+                       selected=unique(data()$Region)[1]),
+    selectInput(inputId="HealthConditionV2",
+                label="Sector:",
+                choices=unique(data()$HealthCondition),
+                selected=unique(data()$HealthCondition)[1]),
+    selectInput(inputId="Year",
+                label="Year:",
+                choices=unique(data()$Year),
+                selected="2017")
+    )
   })
   
+  dat_filtered1 <- reactive({
+    data() %>% 
+      dplyr::filter(Region %in% input$RegionV1, Sector %in% input$SectorV1) 
+  })
+  
+  
+  dat_filtered2 <- reactive({
+    data() %>% 
+      dplyr::filter(Region %in% input$RegionV2, HealthCondition %in% input$HealthConditionV2, Year == input$Year) 
+  })
+  
+    
    output$byTime <- renderPlot({
     ggplot(dat_filtered1(), aes(x=Year, y=Pct_InWork, colour=HealthCondition)) +
        geom_point(size=rel(3)) + geom_line(size=rel(2)) + ylab("% in work") +
