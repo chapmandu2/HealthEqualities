@@ -1,17 +1,14 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
+# Shiny app to explore simulated health inequalities data 
+# Manchester DWP HackTheNorth day November 2017
 
 library(shiny)
 library(tidyverse)
 library(readxl)
 
-data <- read_excel('data/exampledata.xlsx') %>%
+fn <- 'data/exampledata.xlsx'
+#fn <- 'data/simulateddata.xlsx'
+
+data <- read_excel(fn) %>%
   dplyr::mutate(Pct_InWork=rnorm(nrow(data), Pct_InWork, 1))
 
 # Define UI for application that draws a histogram
@@ -87,14 +84,29 @@ server <- function(input, output) {
   
    output$byTime <- renderPlot({
     ggplot(dat_filtered1(), aes(x=Year, y=Pct_InWork, colour=HealthCondition)) +
-       geom_point() + geom_line() + ylab("% in work") +
-       facet_wrap(~Sector+Region) + theme_bw()
+       geom_point(size=rel(3)) + geom_line(size=rel(2)) + ylab("% in work") +
+       facet_wrap(~Sector+Region) + theme_bw() + 
+       theme(axis.title=element_text(size=rel(2.5)),
+             axis.text=element_text(size=rel(1.7)),
+             legend.title=element_text(size=0, color='white'),
+             legend.text=element_text(size=rel(1.7)),
+             strip.text=element_text(size=rel(1.7)),
+             panel.spacing.x=unit(20, units='points'),
+             panel.spacing.y=unit(5, units='points'))
    })
    
    output$bySector <- renderPlot({
      ggplot(dat_filtered2(), aes(x=Sector, y=Pct_InWork, colour=Sector, fill=Sector)) +
        geom_bar(stat = 'identity') + ylab("% in work") +
-       facet_grid(Year+Region~HealthCondition) + theme_bw()
+       facet_grid(Year+Region~HealthCondition) + theme_bw() +
+       theme(axis.title=element_text(size=rel(2.5)),
+             axis.text=element_text(size=rel(1.7)),
+             legend.title=element_text(size=2.5),
+             legend.text=element_text(size=rel(1.7)),
+             strip.text=element_text(size=rel(1.7)),
+             panel.spacing.x=unit(20, units='points'),
+             panel.spacing.y=unit(5, units='points'))
+     
    })
 }
 
