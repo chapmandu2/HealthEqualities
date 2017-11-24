@@ -2,8 +2,10 @@
 # Manchester DWP HackTheNorth day November 2017
 
 library(shiny)
-library(tidyverse)
+library(dplyr)
+library(ggplot2)
 library(readxl)
+library(readr)
 
 
 # Define UI for application that draws a histogram
