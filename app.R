@@ -5,11 +5,12 @@ library(shiny)
 library(tidyverse)
 library(readxl)
 
-fn <- 'data/exampledata.xlsx'
-#fn <- 'data/simulateddata.xlsx'
 
-data <- read_excel(fn) %>%
-  dplyr::mutate(Pct_InWork=rnorm(nrow(data), Pct_InWork, 1))
+#input_data <- read_excel('data/exampledata.xlsx')
+input_data <- read_tsv('data/simulated_data.tsv')
+
+data <- input_data %>%
+  dplyr::mutate(Pct_InWork=rnorm(nrow(input_data), Pct_InWork, 1))
 
 # Define UI for application that draws a histogram
 ui <- navbarPage(title="Health Inequalities In Work",
@@ -21,10 +22,14 @@ ui <- navbarPage(title="Health Inequalities In Work",
                           # 
                           sidebarLayout(
                             sidebarPanel(
+#                              selectInput(inputId="inputData",
+#                                          label="Select input data:",
+#                                          choices=c("Example Data"=1, "Simulated Data"=2),
+#                                          selected=1),
                               checkboxGroupInput(inputId="RegionV1",
                                                  label="Region:",
                                                  choices=unique(data$Region),
-                                                 selected=unique(data$Region)),
+                                                 selected=unique(data$Region)[1]),
                               checkboxGroupInput(inputId="SectorV1",
                                                  label="Sector:",
                                                  choices=unique(data$Sector),
